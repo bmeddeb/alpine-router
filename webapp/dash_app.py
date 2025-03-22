@@ -331,22 +331,368 @@ def init_dash(flask_app):
             system_cards,
             network_interfaces
         ])
-    
-    # Placeholder functions for other pages
+
     def render_interfaces_page(data):
+        """Render the network interfaces configuration page"""
+        if not data or not data.get('interfaces'):
+            return html.Div([
+                html.Div("No interface data available. Please refresh the page.", className="alert alert-warning")
+            ])
+
+        interfaces = data.get('interfaces', [])
+
+        # Organize interfaces by type
+        wan_interfaces = [iface for iface in interfaces if iface.get('is_wan')]
+        lan_interfaces = [iface for iface in interfaces if not iface.get('is_wan')]
+
         return html.Div([
-            html.Div("Network Interfaces configuration page coming soon...", className="card")
+            # Interface management header
+            html.Div([
+                html.Div([
+                    html.H3("Network Interfaces"),
+                    html.P("View and configure your network interfaces")
+                ], className="module-header"),
+
+                # WAN Interfaces section
+                html.Div([
+                    html.H4([
+                        html.I(className="fas fa-globe mr-2"),
+                        "WAN Interfaces"
+                    ], className="section-title"),
+                    html.P("Internet-facing connections", className="section-description"),
+
+                    html.Div([
+                        html.Div([
+                            # Interface header
+                            html.Div([
+                                html.Div([
+                                    html.I(className="fas fa-network-wired mr-2"),
+                                    iface['name']
+                                ], className="interface-config-name"),
+                                html.Div([
+                                    html.Span(iface['status'], className=f"status-badge {'status-up' if iface['status'] == 'UP' else 'status-down'}")
+                                ])
+                            ], className="interface-config-header"),
+
+                            # Interface details
+                            html.Div([
+                                html.Div([
+                                    html.Div("MAC Address", className="detail-label"),
+                                    html.Div(iface['mac'] or "N/A", className="detail-value")
+                                ], className="detail-row"),
+
+                                html.Div([
+                                    html.Div("IP Configuration", className="detail-label"),
+                                    html.Div("DHCP" if iface.get('dhcp_enabled', True) else "Static", className="detail-value")
+                                ], className="detail-row"),
+
+                                html.Div([
+                                    html.Div("IP Address", className="detail-label"),
+                                    html.Div(', '.join(iface['ips']) if iface['ips'] else "None assigned", className="detail-value")
+                                ], className="detail-row"),
+
+                                html.Div([
+                                    html.Div("DNS Servers", className="detail-label"),
+                                    html.Div(iface.get('dns_servers', "Not configured"), className="detail-value")
+                                ], className="detail-row") if iface.get('is_wan') else None,
+                            ], className="interface-config-details"),
+
+                            # Interface actions
+                            html.Div([
+                                html.Button([
+                                    html.I(className="fas fa-edit mr-2"),
+                                    "Edit"
+                                ], id=f"edit-interface-{iface['name']}", className="btn btn-primary mr-2"),
+
+                                html.Button([
+                                    html.I(className=f"fas {'fa-toggle-on' if iface['status'] == 'UP' else 'fa-toggle-off'} mr-2"),
+                                    "Toggle"
+                                ], id=f"toggle-interface-{iface['name']}", className="btn btn-secondary")
+                            ], className="interface-config-actions")
+                        ], className="interface-config-card") for iface in wan_interfaces
+                    ], className="interface-config-grid"),
+
+                    # Show message if no WAN interfaces
+                    html.Div("No WAN interfaces configured. Please use the Setup Wizard to configure a WAN interface.",
+                             className="alert alert-warning") if not wan_interfaces else None,
+                ], className="interface-section"),
+
+                # LAN Interfaces section
+                html.Div([
+                    html.H4([
+                        html.I(className="fas fa-network-wired mr-2"),
+                        "LAN Interfaces"
+                    ], className="section-title"),
+                    html.P("Local network connections", className="section-description"),
+
+                    html.Div([
+                        html.Div([
+                            # Interface header
+                            html.Div([
+                                html.Div([
+                                    html.I(className="fas fa-network-wired mr-2"),
+                                    iface['name']
+                                ], className="interface-config-name"),
+                                html.Div([
+                                    html.Span(iface['status'], className=f"status-badge {'status-up' if iface['status'] == 'UP' else 'status-down'}")
+                                ])
+                            ], className="interface-config-header"),
+
+                            # Interface details
+                            html.Div([
+                                html.Div([
+                                    html.Div("MAC Address", className="detail-label"),
+                                    html.Div(iface['mac'] or "N/A", className="detail-value")
+                                ], className="detail-row"),
+
+                                html.Div([
+                                    html.Div("IP Address", className="detail-label"),
+                                    html.Div(', '.join(iface['ips']) if iface['ips'] else "None assigned", className="detail-value")
+                                ], className="detail-row"),
+
+                                html.Div([
+                                    html.Div("DHCP Server", className="detail-label"),
+                                    html.Div("Enabled" if iface.get('dhcp_enabled', True) else "Disabled", className="detail-value")
+                                ], className="detail-row"),
+                            ], className="interface-config-details"),
+
+                            # Interface actions
+                            html.Div([
+                                html.Button([
+                                    html.I(className="fas fa-edit mr-2"),
+                                    "Edit"
+                                ], id=f"edit-interface-{iface['name']}", className="btn btn-primary mr-2"),
+
+                                html.Button([
+                                    html.I(className=f"fas {'fa-toggle-on' if iface['status'] == 'UP' else 'fa-toggle-off'} mr-2"),
+                                    "Toggle"
+                                ], id=f"toggle-interface-{iface['name']}", className="btn btn-secondary")
+                            ], className="interface-config-actions")
+                        ], className="interface-config-card") for iface in lan_interfaces
+                    ], className="interface-config-grid"),
+
+                    # Show message if no LAN interfaces
+                    html.Div("No LAN interfaces configured. Please use the Setup Wizard to configure at least one LAN interface.",
+                             className="alert alert-warning") if not lan_interfaces else None,
+                ], className="interface-section"),
+            ], className="card")
+        ])
+
+    def render_dhcp_page(data):
+        """Render the DHCP server configuration page"""
+        if not data or not data.get('interfaces'):
+            return html.Div([
+                html.Div("No interface data available. Please refresh the page.", className="alert alert-warning")
+            ])
+
+        interfaces = data.get('interfaces', [])
+
+        # Get LAN interfaces (only these can run DHCP server)
+        lan_interfaces = [iface for iface in interfaces if not iface.get('is_wan')]
+
+        # Sample DHCP configuration (would come from API/database in real implementation)
+        dhcp_config = {
+            'enabled': True,
+            'start_ip': '192.168.1.100',
+            'end_ip': '192.168.1.200',
+            'lease_time': 24,  # hours
+            'domain': 'lan.local',
+            'static_leases': [
+                {'mac': '00:11:22:33:44:55', 'ip': '192.168.1.10', 'hostname': 'desktop-pc'},
+                {'mac': 'aa:bb:cc:dd:ee:ff', 'ip': '192.168.1.20', 'hostname': 'printer'}
+            ]
+        }
+
+        return html.Div([
+            # DHCP Server settings card
+            html.Div([
+                html.Div([
+                    html.H3("DHCP Server Settings"),
+                    html.P("Configure automatic IP address assignment for your network")
+                ], className="module-header"),
+
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Label("DHCP Server Status", htmlFor="dhcp-status"),
+                            dcc.Dropdown(
+                                id="dhcp-status",
+                                options=[
+                                    {'label': 'Enabled', 'value': 'enabled'},
+                                    {'label': 'Disabled', 'value': 'disabled'}
+                                ],
+                                value='enabled' if dhcp_config['enabled'] else 'disabled',
+                                clearable=False,
+                                className="form-control"
+                            )
+                        ], className="form-group col-md-6"),
+
+                        html.Div([
+                            html.Label("Interface", htmlFor="dhcp-interface"),
+                            dcc.Dropdown(
+                                id="dhcp-interface",
+                                options=[
+                                    {'label': iface['name'], 'value': iface['name']} for iface in lan_interfaces
+                                ],
+                                value=lan_interfaces[0]['name'] if lan_interfaces else None,
+                                placeholder="Select LAN interface",
+                                clearable=False,
+                                className="form-control",
+                                disabled=len(lan_interfaces) == 0
+                            )
+                        ], className="form-group col-md-6"),
+                    ], className="form-row"),
+
+                    html.Div([
+                        html.Div([
+                            html.Label("IP Range Start", htmlFor="dhcp-start"),
+                            dcc.Input(
+                                id="dhcp-start",
+                                type="text",
+                                value=dhcp_config['start_ip'],
+                                placeholder="e.g., 192.168.1.100",
+                                className="form-control"
+                            )
+                        ], className="form-group col-md-6"),
+
+                        html.Div([
+                            html.Label("IP Range End", htmlFor="dhcp-end"),
+                            dcc.Input(
+                                id="dhcp-end",
+                                type="text",
+                                value=dhcp_config['end_ip'],
+                                placeholder="e.g., 192.168.1.200",
+                                className="form-control"
+                            )
+                        ], className="form-group col-md-6"),
+                    ], className="form-row"),
+
+                    html.Div([
+                        html.Div([
+                            html.Label("Lease Time (hours)", htmlFor="dhcp-lease"),
+                            dcc.Input(
+                                id="dhcp-lease",
+                                type="number",
+                                value=dhcp_config['lease_time'],
+                                min=1,
+                                max=168,  # 1 week max
+                                className="form-control"
+                            )
+                        ], className="form-group col-md-6"),
+
+                        html.Div([
+                            html.Label("Domain Name", htmlFor="dhcp-domain"),
+                            dcc.Input(
+                                id="dhcp-domain",
+                                type="text",
+                                value=dhcp_config['domain'],
+                                placeholder="e.g., lan.local",
+                                className="form-control"
+                            )
+                        ], className="form-group col-md-6"),
+                    ], className="form-row"),
+
+                    html.Div([
+                        html.Button([
+                            html.I(className="fas fa-save mr-2"),
+                            "Save Settings"
+                        ], id="save-dhcp-settings", className="btn btn-primary")
+                    ], className="form-actions"),
+                ], className="dhcp-settings-form"),
+            ], className="card"),
+
+            # Static DHCP leases card
+            html.Div([
+                html.Div([
+                    html.H3("Static DHCP Leases"),
+                    html.Div([
+                        html.Button([
+                            html.I(className="fas fa-plus mr-2"),
+                            "Add Static Lease"
+                        ], id="add-dhcp-lease", className="btn btn-primary")
+                    ], className="module-actions")
+                ], className="module-header"),
+
+                html.Div([
+                    html.Div([
+                        html.Table([
+                            html.Thead([
+                                html.Tr([
+                                    html.Th("Hostname"),
+                                    html.Th("MAC Address"),
+                                    html.Th("IP Address"),
+                                    html.Th("Actions")
+                                ])
+                            ]),
+                            html.Tbody([
+                                html.Tr([
+                                    html.Td(lease['hostname']),
+                                    html.Td(lease['mac']),
+                                    html.Td(lease['ip']),
+                                    html.Td([
+                                        html.Button([
+                                            html.I(className="fas fa-edit")
+                                        ], id=f"edit-lease-{i}", className="btn btn-sm btn-primary mr-2"),
+                                        html.Button([
+                                            html.I(className="fas fa-trash")
+                                        ], id=f"delete-lease-{i}", className="btn btn-sm btn-danger")
+                                    ])
+                                ]) for i, lease in enumerate(dhcp_config['static_leases'])
+                            ])
+                        ], className="data-table")
+                    ], className="table-container")
+                ], className="module-content")
+            ], className="card"),
+
+            # DHCP Leases card (active leases)
+            html.Div([
+                html.Div([
+                    html.H3("Active DHCP Leases"),
+                    html.Div([
+                        html.Button([
+                            html.I(className="fas fa-sync-alt mr-2"),
+                            "Refresh Leases"
+                        ], id="refresh-dhcp-leases", className="btn btn-secondary")
+                    ], className="module-actions")
+                ], className="module-header"),
+
+                html.Div([
+                    html.Div([
+                        html.Table([
+                            html.Thead([
+                                html.Tr([
+                                    html.Th("Hostname"),
+                                    html.Th("MAC Address"),
+                                    html.Th("IP Address"),
+                                    html.Th("Expires")
+                                ])
+                            ]),
+                            html.Tbody([
+                                # Example active leases - would be populated from backend
+                                html.Tr([
+                                    html.Td("laptop-1"),
+                                    html.Td("11:22:33:44:55:66"),
+                                    html.Td("192.168.1.101"),
+                                    html.Td("23 hours")
+                                ]),
+                                html.Tr([
+                                    html.Td("smartphone"),
+                                    html.Td("aa:bb:cc:11:22:33"),
+                                    html.Td("192.168.1.102"),
+                                    html.Td("22 hours")
+                                ]),
+                            ])
+                        ], className="data-table")
+                    ], className="table-container")
+                ], className="module-content")
+            ], className="card"),
         ])
     
     def render_firewall_page(data):
         return html.Div([
             html.Div("Firewall Rules configuration page coming soon...", className="card")
         ])
-    
-    def render_dhcp_page(data):
-        return html.Div([
-            html.Div("DHCP Server configuration page coming soon...", className="card")
-        ])
+
     
     def render_dns_page(data):
         return html.Div([
