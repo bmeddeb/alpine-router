@@ -687,23 +687,603 @@ def init_dash(flask_app):
                 ], className="module-content")
             ], className="card"),
         ])
-    
+
     def render_firewall_page(data):
+        """Render the firewall rules management page"""
+
+        # Sample firewall rules (hardcoded for now)
+        firewall_rules = [
+            {
+                'id': 1,
+                'name': 'Allow SSH',
+                'src': 'WAN',
+                'dst': 'LAN',
+                'protocol': 'TCP',
+                'port': '22',
+                'action': 'ACCEPT',
+                'enabled': True
+            },
+            {
+                'id': 2,
+                'name': 'Block Telnet',
+                'src': 'ANY',
+                'dst': 'LAN',
+                'protocol': 'TCP',
+                'port': '23',
+                'action': 'DROP',
+                'enabled': True
+            },
+            {
+                'id': 3,
+                'name': 'Allow Web Access',
+                'src': 'LAN',
+                'dst': 'ANY',
+                'protocol': 'TCP',
+                'port': '80,443',
+                'action': 'ACCEPT',
+                'enabled': True
+            },
+            {
+                'id': 4,
+                'name': 'Allow DNS',
+                'src': 'LAN',
+                'dst': 'ANY',
+                'protocol': 'UDP',
+                'port': '53',
+                'action': 'ACCEPT',
+                'enabled': True
+            }
+        ]
+
+        # Firewall zones (hardcoded for now)
+        firewall_zones = [
+            {'id': 'WAN', 'name': 'WAN (Internet)', 'default_policy': 'DROP'},
+            {'id': 'LAN', 'name': 'LAN (Local Network)', 'default_policy': 'ACCEPT'},
+            {'id': 'DMZ', 'name': 'DMZ', 'default_policy': 'DROP'}
+        ]
+
         return html.Div([
-            html.Div("Firewall Rules configuration page coming soon...", className="card")
+            # Firewall status card
+            html.Div([
+                html.Div([
+                    html.H3("Firewall Status"),
+                    html.Div([
+                        html.Button([
+                            html.I(className="fas fa-power-off mr-2"),
+                            "Toggle Firewall"
+                        ], id="toggle-firewall-btn", className="btn btn-warning")
+                    ], className="module-actions")
+                ], className="module-header"),
+
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.I(className="fas fa-shield-alt"),
+                        ], className="status-icon"),
+                        html.Div([
+                            html.Div("Active", className="status-label status-active"),
+                            html.Div("The firewall is currently enforcing all rules", className="status-description")
+                        ], className="status-details")
+                    ], className="status-indicator-card")
+                ], className="status-section")
+            ], className="card"),
+
+            # Firewall zones card
+            html.Div([
+                html.Div([
+                    html.H3("Network Zones"),
+                    html.Div([
+                        html.Button([
+                            html.I(className="fas fa-plus mr-2"),
+                            "Add Zone"
+                        ], id="add-zone-btn", className="btn btn-primary")
+                    ], className="module-actions")
+                ], className="module-header"),
+
+                html.Div([
+                    html.Div([
+                        html.Table([
+                            html.Thead([
+                                html.Tr([
+                                    html.Th("Zone"),
+                                    html.Th("Description"),
+                                    html.Th("Default Policy"),
+                                    html.Th("Actions")
+                                ])
+                            ]),
+                            html.Tbody([
+                                html.Tr([
+                                    html.Td(zone['id']),
+                                    html.Td(zone['name']),
+                                    html.Td([
+                                        html.Span(zone['default_policy'],
+                                                  className=f"policy-badge {'accept' if zone['default_policy'] == 'ACCEPT' else 'drop'}")
+                                    ]),
+                                    html.Td([
+                                        html.Button([
+                                            html.I(className="fas fa-edit")
+                                        ], id=f"edit-zone-{zone['id']}", className="btn btn-sm btn-primary mr-2"),
+                                        html.Button([
+                                            html.I(className="fas fa-trash")
+                                        ], id=f"delete-zone-{zone['id']}",
+                                            className="btn btn-sm btn-danger",
+                                            disabled=zone['id'] in ['WAN', 'LAN'])  # Can't delete default zones
+                                    ])
+                                ]) for zone in firewall_zones
+                            ])
+                        ], className="data-table")
+                    ], className="table-container")
+                ], className="module-content")
+            ], className="card"),
+
+            # Firewall rules card
+            html.Div([
+                html.Div([
+                    html.H3("Firewall Rules"),
+                    html.Div([
+                        html.Button([
+                            html.I(className="fas fa-plus mr-2"),
+                            "Add Rule"
+                        ], id="add-rule-btn", className="btn btn-primary")
+                    ], className="module-actions")
+                ], className="module-header"),
+
+                html.Div([
+                    html.Div([
+                        html.Table([
+                            html.Thead([
+                                html.Tr([
+                                    html.Th("Name"),
+                                    html.Th("Source"),
+                                    html.Th("Destination"),
+                                    html.Th("Protocol"),
+                                    html.Th("Port"),
+                                    html.Th("Action"),
+                                    html.Th("Status"),
+                                    html.Th("Actions")
+                                ])
+                            ]),
+                            html.Tbody([
+                                html.Tr([
+                                    html.Td(rule['name']),
+                                    html.Td(rule['src']),
+                                    html.Td(rule['dst']),
+                                    html.Td(rule['protocol']),
+                                    html.Td(rule['port']),
+                                    html.Td([
+                                        html.Span(rule['action'],
+                                                  className=f"policy-badge {'accept' if rule['action'] == 'ACCEPT' else 'drop'}")
+                                    ]),
+                                    html.Td([
+                                        html.Span("Enabled" if rule['enabled'] else "Disabled",
+                                                  className=f"status-badge {'status-up' if rule['enabled'] else 'status-down'}")
+                                    ]),
+                                    html.Td([
+                                        html.Button([
+                                            html.I(className="fas fa-edit")
+                                        ], id=f"edit-rule-{rule['id']}", className="btn btn-sm btn-primary mr-2"),
+                                        html.Button([
+                                            html.I(className="fas fa-toggle-on" if rule['enabled'] else "fa-toggle-off")
+                                        ], id=f"toggle-rule-{rule['id']}", className="btn btn-sm btn-secondary mr-2"),
+                                        html.Button([
+                                            html.I(className="fas fa-trash")
+                                        ], id=f"delete-rule-{rule['id']}", className="btn btn-sm btn-danger")
+                                    ])
+                                ]) for rule in firewall_rules
+                            ])
+                        ], className="data-table")
+                    ], className="table-container")
+                ], className="module-content")
+            ], className="card"),
+
+            # Port forwarding card
+            html.Div([
+                html.Div([
+                    html.H3("Port Forwarding"),
+                    html.Div([
+                        html.Button([
+                            html.I(className="fas fa-plus mr-2"),
+                            "Add Port Forward"
+                        ], id="add-port-forward-btn", className="btn btn-primary")
+                    ], className="module-actions")
+                ], className="module-header"),
+
+                html.Div([
+                    # Example port forwarding rules
+                    html.Div([
+                        html.Table([
+                            html.Thead([
+                                html.Tr([
+                                    html.Th("Name"),
+                                    html.Th("External Port"),
+                                    html.Th("Internal IP"),
+                                    html.Th("Internal Port"),
+                                    html.Th("Protocol"),
+                                    html.Th("Status"),
+                                    html.Th("Actions")
+                                ])
+                            ]),
+                            html.Tbody([
+                                html.Tr([
+                                    html.Td("Web Server"),
+                                    html.Td("80"),
+                                    html.Td("192.168.1.10"),
+                                    html.Td("80"),
+                                    html.Td("TCP"),
+                                    html.Td([
+                                        html.Span("Enabled", className="status-badge status-up")
+                                    ]),
+                                    html.Td([
+                                        html.Button([
+                                            html.I(className="fas fa-edit")
+                                        ], id="edit-port-forward-1", className="btn btn-sm btn-primary mr-2"),
+                                        html.Button([
+                                            html.I(className="fas fa-toggle-on")
+                                        ], id="toggle-port-forward-1", className="btn btn-sm btn-secondary mr-2"),
+                                        html.Button([
+                                            html.I(className="fas fa-trash")
+                                        ], id="delete-port-forward-1", className="btn btn-sm btn-danger")
+                                    ])
+                                ]),
+                                html.Tr([
+                                    html.Td("SSH Access"),
+                                    html.Td("2222"),
+                                    html.Td("192.168.1.10"),
+                                    html.Td("22"),
+                                    html.Td("TCP"),
+                                    html.Td([
+                                        html.Span("Enabled", className="status-badge status-up")
+                                    ]),
+                                    html.Td([
+                                        html.Button([
+                                            html.I(className="fas fa-edit")
+                                        ], id="edit-port-forward-2", className="btn btn-sm btn-primary mr-2"),
+                                        html.Button([
+                                            html.I(className="fas fa-toggle-on")
+                                        ], id="toggle-port-forward-2", className="btn btn-sm btn-secondary mr-2"),
+                                        html.Button([
+                                            html.I(className="fas fa-trash")
+                                        ], id="delete-port-forward-2", className="btn btn-sm btn-danger")
+                                    ])
+                                ])
+                            ])
+                        ], className="data-table")
+                    ], className="table-container")
+                ], className="module-content")
+            ], className="card"),
         ])
 
-    
+
     def render_dns_page(data):
+        """Render the DNS settings page"""
+
+        # Sample DNS settings (hardcoded for now)
+        dns_settings = {
+            'primary_dns': '8.8.8.8',
+            'secondary_dns': '1.1.1.1',
+            'local_domain': 'lan.local',
+            'enable_dns_forwarding': True,
+            'enable_dnssec': True,
+            'blocking_enabled': True,
+            'blocked_domains': [
+                'ads.example.com',
+                'malware.example.com',
+                'tracker.example.com'
+            ],
+            'custom_entries': [
+                {'hostname': 'router', 'ip': '192.168.1.1'},
+                {'hostname': 'nas', 'ip': '192.168.1.10'},
+                {'hostname': 'printer', 'ip': '192.168.1.20'}
+            ]
+        }
+
         return html.Div([
-            html.Div("DNS Settings configuration page coming soon...", className="card")
+            # DNS server settings card
+            html.Div([
+                html.Div([
+                    html.H3("DNS Server Settings"),
+                    html.Div([
+                        html.Button([
+                            html.I(className="fas fa-save mr-2"),
+                            "Save Changes"
+                        ], id="save-dns-settings", className="btn btn-primary")
+                    ], className="module-actions")
+                ], className="module-header"),
+
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Label("Primary DNS Server", htmlFor="primary-dns"),
+                            dcc.Input(
+                                id="primary-dns",
+                                type="text",
+                                value=dns_settings['primary_dns'],
+                                placeholder="e.g., 8.8.8.8",
+                                className="form-control"
+                            )
+                        ], className="form-group col-md-6"),
+
+                        html.Div([
+                            html.Label("Secondary DNS Server", htmlFor="secondary-dns"),
+                            dcc.Input(
+                                id="secondary-dns",
+                                type="text",
+                                value=dns_settings['secondary_dns'],
+                                placeholder="e.g., 1.1.1.1",
+                                className="form-control"
+                            )
+                        ], className="form-group col-md-6")
+                    ], className="form-row"),
+
+                    html.Div([
+                        html.Div([
+                            html.Label("Local Domain", htmlFor="local-domain"),
+                            dcc.Input(
+                                id="local-domain",
+                                type="text",
+                                value=dns_settings['local_domain'],
+                                placeholder="e.g., lan.local",
+                                className="form-control"
+                            )
+                        ], className="form-group col-md-12")
+                    ], className="form-row"),
+
+                    html.Div([
+                        html.Div([
+                            html.H4("DNS Features"),
+                            dcc.Checklist(
+                                id="dns-features",
+                                options=[
+                                    {'label': 'Enable DNS Forwarding', 'value': 'FORWARDING'},
+                                    {'label': 'Enable DNSSEC', 'value': 'DNSSEC'},
+                                    {'label': 'Enable Domain Blocking', 'value': 'BLOCKING'}
+                                ],
+                                value=[
+                                    'FORWARDING' if dns_settings['enable_dns_forwarding'] else '',
+                                    'DNSSEC' if dns_settings['enable_dnssec'] else '',
+                                    'BLOCKING' if dns_settings['blocking_enabled'] else ''
+                                ],
+                                labelStyle={'display': 'block', 'marginBottom': '10px'}
+                            )
+                        ], className="form-group col-md-12")
+                    ], className="form-row")
+                ], className="dns-settings-form")
+            ], className="card"),
+
+            # DNS domain blocking card
+            html.Div([
+                html.Div([
+                    html.H3("Domain Blocking"),
+                    html.Div([
+                        html.Button([
+                            html.I(className="fas fa-plus mr-2"),
+                            "Add Domain"
+                        ], id="add-blocked-domain", className="btn btn-primary")
+                    ], className="module-actions")
+                ], className="module-header"),
+
+                html.Div([
+                    html.Div([
+                        html.Table([
+                            html.Thead([
+                                html.Tr([
+                                    html.Th("Domain"),
+                                    html.Th("Actions")
+                                ])
+                            ]),
+                            html.Tbody([
+                                html.Tr([
+                                    html.Td(domain),
+                                    html.Td([
+                                        html.Button([
+                                            html.I(className="fas fa-trash")
+                                        ], id=f"delete-domain-{i}", className="btn btn-sm btn-danger")
+                                    ])
+                                ]) for i, domain in enumerate(dns_settings['blocked_domains'])
+                            ])
+                        ], className="data-table")
+                    ], className="table-container")
+                ], className="module-content")
+            ], className="card"),
+
+            # DNS local entries card
+            html.Div([
+                html.Div([
+                    html.H3("Local DNS Entries"),
+                    html.Div([
+                        html.Button([
+                            html.I(className="fas fa-plus mr-2"),
+                            "Add Entry"
+                        ], id="add-dns-entry", className="btn btn-primary")
+                    ], className="module-actions")
+                ], className="module-header"),
+
+                html.Div([
+                    html.Div([
+                        html.Table([
+                            html.Thead([
+                                html.Tr([
+                                    html.Th("Hostname"),
+                                    html.Th("IP Address"),
+                                    html.Th("Actions")
+                                ])
+                            ]),
+                            html.Tbody([
+                                html.Tr([
+                                    html.Td(entry['hostname']),
+                                    html.Td(entry['ip']),
+                                    html.Td([
+                                        html.Button([
+                                            html.I(className="fas fa-edit")
+                                        ], id=f"edit-dns-{i}", className="btn btn-sm btn-primary mr-2"),
+                                        html.Button([
+                                            html.I(className="fas fa-trash")
+                                        ], id=f"delete-dns-{i}", className="btn btn-sm btn-danger")
+                                    ])
+                                ]) for i, entry in enumerate(dns_settings['custom_entries'])
+                            ])
+                        ], className="data-table")
+                    ], className="table-container")
+                ], className="module-content")
+            ], className="card")
         ])
-    
+
     def render_traffic_page(data):
+        """Render the traffic monitor page"""
+
+        # Sample traffic data (hardcoded for now)
+        traffic_data = {
+            'interfaces': [
+                {'name': 'eth0', 'rx_bytes': 1024000, 'tx_bytes': 512000, 'rx_packets': 1500, 'tx_packets': 1200},
+                {'name': 'eth1', 'rx_bytes': 2048000, 'tx_bytes': 1024000, 'rx_packets': 3000, 'tx_packets': 2500}
+            ],
+            'top_connections': [
+                {'src_ip': '192.168.1.10', 'dst_ip': '203.0.113.1', 'protocol': 'TCP', 'dst_port': 443, 'bytes': 1024000},
+                {'src_ip': '192.168.1.15', 'dst_ip': '198.51.100.1', 'protocol': 'UDP', 'dst_port': 53, 'bytes': 51200},
+                {'src_ip': '192.168.1.20', 'dst_ip': '198.51.100.5', 'protocol': 'TCP', 'dst_port': 80, 'bytes': 512000}
+            ]
+        }
+
+        # Create a traffic graph
+        traffic_graph = dcc.Graph(
+            figure=go.Figure(
+                data=[
+                    go.Bar(
+                        name='Received (RX)',
+                        x=[iface['name'] for iface in traffic_data['interfaces']],
+                        y=[iface['rx_bytes'] / (1024*1024) for iface in traffic_data['interfaces']],
+                        marker_color='#3498db'
+                    ),
+                    go.Bar(
+                        name='Transmitted (TX)',
+                        x=[iface['name'] for iface in traffic_data['interfaces']],
+                        y=[iface['tx_bytes'] / (1024*1024) for iface in traffic_data['interfaces']],
+                        marker_color='#2ecc71'
+                    )
+                ],
+                layout=go.Layout(
+                    title='Network Traffic by Interface (MB)',
+                    barmode='group',
+                    margin=dict(l=40, r=40, t=80, b=40)
+                )
+            ),
+            config={'displayModeBar': False}
+        )
+
+        # Create a packets graph
+        packets_graph = dcc.Graph(
+            figure=go.Figure(
+                data=[
+                    go.Bar(
+                        name='Received (RX)',
+                        x=[iface['name'] for iface in traffic_data['interfaces']],
+                        y=[iface['rx_packets'] for iface in traffic_data['interfaces']],
+                        marker_color='#3498db'
+                    ),
+                    go.Bar(
+                        name='Transmitted (TX)',
+                        x=[iface['name'] for iface in traffic_data['interfaces']],
+                        y=[iface['tx_packets'] for iface in traffic_data['interfaces']],
+                        marker_color='#2ecc71'
+                    )
+                ],
+                layout=go.Layout(
+                    title='Network Packets by Interface',
+                    barmode='group',
+                    margin=dict(l=40, r=40, t=80, b=40)
+                )
+            ),
+            config={'displayModeBar': False}
+        )
+
         return html.Div([
-            html.Div("Traffic Monitor page coming soon...", className="card")
+            # Traffic overview card
+            html.Div([
+                html.Div([
+                    html.H3("Network Traffic"),
+                    html.Div([
+                        html.Button([
+                            html.I(className="fas fa-sync-alt mr-2"),
+                            "Refresh"
+                        ], id="refresh-traffic", className="btn btn-secondary"),
+                        dcc.Dropdown(
+                            id="traffic-timeframe",
+                            options=[
+                                {'label': 'Last Hour', 'value': '1h'},
+                                {'label': 'Last 6 Hours', 'value': '6h'},
+                                {'label': 'Last 24 Hours', 'value': '24h'},
+                                {'label': 'Last Week', 'value': '1w'}
+                            ],
+                            value='1h',
+                            clearable=False,
+                            style={'width': '150px', 'marginLeft': '10px'}
+                        )
+                    ], className="module-actions")
+                ], className="module-header"),
+
+                html.Div([
+                    html.Div([
+                        traffic_graph
+                    ], className="chart-container"),
+
+                    html.Div([
+                        packets_graph
+                    ], className="chart-container mt-4")
+                ], className="module-content")
+            ], className="card"),
+
+            # Top connections card
+            html.Div([
+                html.Div([
+                    html.H3("Top Connections"),
+                    html.Div([
+                        dcc.Dropdown(
+                            id="top-connections-filter",
+                            options=[
+                                {'label': 'All', 'value': 'all'},
+                                {'label': 'TCP Only', 'value': 'tcp'},
+                                {'label': 'UDP Only', 'value': 'udp'}
+                            ],
+                            value='all',
+                            clearable=False,
+                            style={'width': '150px'}
+                        )
+                    ], className="module-actions")
+                ], className="module-header"),
+
+                html.Div([
+                    html.Div([
+                        html.Table([
+                            html.Thead([
+                                html.Tr([
+                                    html.Th("Source IP"),
+                                    html.Th("Destination IP"),
+                                    html.Th("Protocol"),
+                                    html.Th("Port"),
+                                    html.Th("Data"),
+                                    html.Th("Actions")
+                                ])
+                            ]),
+                            html.Tbody([
+                                html.Tr([
+                                    html.Td(conn['src_ip']),
+                                    html.Td(conn['dst_ip']),
+                                    html.Td(conn['protocol']),
+                                    html.Td(conn['dst_port']),
+                                    html.Td(f"{conn['bytes'] / 1024:.2f} KB"),
+                                    html.Td([
+                                        html.Button([
+                                            html.I(className="fas fa-ban")
+                                        ], id=f"block-conn-{i}", className="btn btn-sm btn-danger", title="Block this connection")
+                                    ])
+                                ]) for i, conn in enumerate(traffic_data['top_connections'])
+                            ])
+                        ], className="data-table")
+                    ], className="table-container")
+                ], className="module-content")
+            ], className="card")
         ])
-    
+
     def render_settings_page(data):
         return html.Div([
             html.Div("System Settings page coming soon...", className="card")

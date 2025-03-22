@@ -538,3 +538,80 @@ body {
         max-width: 100%;
     }
 }
+
+/* Additional styles for Firewall page */
+.status-section {
+    padding: 10px 0;
+}
+
+.status-indicator-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.status-icon {
+    width: 60px;
+    height: 60px;
+    background-color: rgba(52, 152, 219, 0.1);
+    color: var(--primary-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+}
+
+.status-details {
+    flex: 1;
+}
+
+.status-label {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.status-description {
+    color: var(--gray-color);
+}
+
+.status-active {
+    color: var(--secondary-color);
+}
+
+.policy-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.policy-badge.accept {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.policy-badge.drop {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.btn-warning {
+    background-color: var(--warning-color);
+    color: white;
+}
+
+.btn-warning:hover {
+    background-color: #d35400;
+}
+
+/* Additional styles for Traffic Monitor page */
+.chart-container {
+    height: 300px;
+    width: 100%;
+}
+
+.mt-4 {
+    margin-top: 20px;
+}
