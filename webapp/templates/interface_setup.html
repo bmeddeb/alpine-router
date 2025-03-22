@@ -1,10 +1,171 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Interface Setup - Alpine Router</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/setup.css') }}">
 </head>
 <body>
-$END$
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-network-wired"></i> Alpine Router - Network Setup</h1>
+            <a href="/dashboard" class="btn"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        </header>
+        
+        <div class="card">
+            <div class="card-header">
+                <h2>Network Interface Configuration</h2>
+            </div>
+            <div class="card-body">
+                <div class="setup-steps">
+                    <div class="step active" id="step1">
+                        <div class="step-number">1</div>
+                        <div class="step-title">Interface Assignment</div>
+                        <div class="step-description">Set WAN and LAN interfaces</div>
+                    </div>
+                    <div class="step" id="step2">
+                        <div class="step-number">2</div>
+                        <div class="step-title">Configure WAN</div>
+                        <div class="step-description">Set up internet connection</div>
+                    </div>
+                    <div class="step" id="step3">
+                        <div class="step-number">3</div>
+                        <div class="step-title">Configure LAN</div>
+                        <div class="step-description">Set up local network</div>
+                    </div>
+                    <div class="step" id="step4">
+                        <div class="step-number">4</div>
+                        <div class="step-title">Apply Changes</div>
+                        <div class="step-description">Save and apply configuration</div>
+                    </div>
+                </div>
+                
+                <!-- Step 1: Interface Assignment -->
+                <div id="step1-container">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Please select one interface to be your WAN (Internet) connection and at least one interface to be your LAN (Local Network).
+                    </div>
+                    
+                    <div id="interfaces-container" class="interfaces-grid">
+                        <!-- Interface cards will be populated here via JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Step 2: WAN Configuration -->
+                <div id="step2-container" class="hidden">
+                    <div class="config-section">
+                        <div class="config-title">
+                            <i class="fas fa-globe"></i> WAN Configuration
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="radio" id="wan-dhcp" name="wan-type" value="dhcp" checked>
+                                <label for="wan-dhcp">DHCP (Automatic Configuration)</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="radio" id="wan-static" name="wan-type" value="static">
+                                <label for="wan-static">Static IP</label>
+                            </div>
+                        </div>
+                        
+                        <div id="wan-static-config" class="toggle-section hidden">
+                            <div class="form-group">
+                                <label for="wan-ip">IP Address</label>
+                                <input type="text" id="wan-ip" class="form-control" placeholder="192.168.1.2">
+                            </div>
+                            <div class="form-group">
+                                <label for="wan-netmask">Subnet Mask</label>
+                                <input type="text" id="wan-netmask" class="form-control" placeholder="255.255.255.0">
+                            </div>
+                            <div class="form-group">
+                                <label for="wan-gateway">Gateway</label>
+                                <input type="text" id="wan-gateway" class="form-control" placeholder="192.168.1.1">
+                            </div>
+                            <div class="form-group">
+                                <label for="wan-dns">DNS Servers (separated by commas)</label>
+                                <input type="text" id="wan-dns" class="form-control" placeholder="8.8.8.8, 1.1.1.1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 3: LAN Configuration -->
+                <div id="step3-container" class="hidden">
+                    <div class="config-section">
+                        <div class="config-title">
+                            <i class="fas fa-network-wired"></i> LAN Configuration
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="lan-ip">LAN IP Address</label>
+                            <input type="text" id="lan-ip" class="form-control" value="192.168.1.1">
+                        </div>
+                        <div class="form-group">
+                            <label for="lan-netmask">LAN Subnet Mask</label>
+                            <input type="text" id="lan-netmask" class="form-control" value="255.255.255.0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" id="lan-dhcp-server" checked>
+                                <label for="lan-dhcp-server">Enable DHCP Server</label>
+                            </div>
+                        </div>
+                        
+                        <div id="dhcp-server-config" class="toggle-section">
+                            <div class="form-group">
+                                <label for="dhcp-start">Start IP Address</label>
+                                <input type="text" id="dhcp-start" class="form-control" value="192.168.1.100">
+                            </div>
+                            <div class="form-group">
+                                <label for="dhcp-end">End IP Address</label>
+                                <input type="text" id="dhcp-end" class="form-control" value="192.168.1.200">
+                            </div>
+                            <div class="form-group">
+                                <label for="dhcp-lease">Lease Time (hours)</label>
+                                <input type="number" id="dhcp-lease" class="form-control" value="24">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 4: Apply Changes -->
+                <div id="step4-container" class="hidden">
+                    <div class="config-section">
+                        <div class="config-title">
+                            <i class="fas fa-check-circle"></i> Apply Configuration
+                        </div>
+                        
+                        <p>Review your configuration before applying:</p>
+                        
+                        <div class="review-section">
+                            <h4>WAN Configuration</h4>
+                            <div id="wan-review"></div>
+                        </div>
+                        
+                        <div class="review-section">
+                            <h4>LAN Configuration</h4>
+                            <div id="lan-review"></div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Applying these changes will restart network services, which may temporarily disconnect you. Make sure your settings are correct.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="back-btn" class="btn hidden"><i class="fas fa-arrow-left"></i> Back</button>
+                    <button id="next-btn" class="btn btn-success">Next <i class="fas fa-arrow-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/setup.js') }}"></script>
 </body>
 </html>
